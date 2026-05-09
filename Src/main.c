@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stm32l4xx.h>
+#include <stdlib.h>
 
 #define SYSTICK_HZ 2
 
@@ -15,14 +16,14 @@ typedef enum state {
 	IDLE
 } state;
 
-typedef struct process {
+typedef struct {
 	void *sp; // stack pointer
 	state proc_state;
 	int priority;
 	void (*fn_ptr)(void*);
 
 	struct process* next; // next task
-};
+} process;
 
 uint32_t stack_1[32];
 uint32_t *sp1_ptr = &stack_1[32];
@@ -49,8 +50,6 @@ void init_stack(uint32_t *sp, void (*entry)(void), void *arg)
 }
 
 
-process process_head = NULL;
-
 void init_systick(int hz)
 {
 	SysTick->CTRL &= ~0x01;
@@ -67,22 +66,7 @@ void init_systick(int hz)
 
 void SysTick_Handler(void)
 {
-	// loop through list
-
-	if (process_head == NULL)
-	{
-		return;
-	}
-
-	process tmp_process = process_head->next;
-	next_running_process = tmp_process;
-	while (tmp_process)
-	{
-		if (tmp_process->priority > next_running_process->priority && tmp_process->proc_state == BUSY)
-		{
-			continue;
-		}
-	}
+	// implement scheduler
 }
 
 int main(void)
