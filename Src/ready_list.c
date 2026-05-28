@@ -17,7 +17,7 @@ uint8_t init_ready_list(ready_list_t *rl)
 }
 
 
-uint8_t add_task(ready_list_t *rl, tcb_t *task)
+uint8_t push_task(ready_list_t *rl, tcb_t *task)
 {
 	if (rl == NULL || task == NULL)
 	{
@@ -44,51 +44,33 @@ uint8_t add_task(ready_list_t *rl, tcb_t *task)
 	return 0;
 }
 
-uint8_t remove_task(ready_list_t *rl, char *name)
+uint8_t pop_task(ready_list_t *rl)
 {
-	if (rl == NULL || name == NULL)
+	if (rl == NULL)
+	{
+		return 1;
+	}
+
+	if (rl->size <= 0)
 	{
 		return 2;
 	}
 
-	if (rl->size == 0)
+	if (rl->size == 1)
 	{
-		return 3;
+		rl->head == NULL;
+		rl->tail == NULL;
+	}
+	else
+	{
+		tcb_t *old_head = rl->head;
+
+		rl->head = rl->head->next;
+		old_head->next = NULL;
 	}
 
-	tcb_t *cur = rl->head;
-	tcb_t *prev = NULL;
-
-	while(cur != NULL)
-	{
-
-		if (strcmp(name, cur->name) == 0)
-		{
-			if (prev == NULL && rl->size == 1)
-			{
-				rl->head = NULL;
-				rl->tail = NULL;
-			}
-			else if (prev == NULL && rl->size > 1)
-			{
-				rl->head = rl->head->next;
-				cur->next = NULL; // need to delete this node
-			}
-			else
-			{
-				prev->next = cur->next;
-				cur->next = NULL; // need to delete this node
-			}
-			rl->size--;
-			return 0;
-		}
-
-		prev = cur;
-		cur = cur->next;
-
-	}
-
-	return 1;
+	rl->size--;
+	return 0;
 }
 
 uint8_t shift_list(ready_list_t *rl)
