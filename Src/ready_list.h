@@ -20,9 +20,6 @@ typedef struct ready_list
 uint8_t init_ready_list(ready_list_t *rl); // init struct
 uint8_t push_task(ready_list_t *rl, tcb_t *task);
 uint8_t pop_task(ready_list_t *rl); // pops from task
-uint8_t shift_list(ready_list_t *rl);
-
-void scheduler_tick();
 
 
 #endif /* READY_LIST_H_ */

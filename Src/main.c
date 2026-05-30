@@ -4,6 +4,7 @@
 #include "scheduler.h"
 #include "task_stack.h"
 
+#define UNIT_TESTS
 #define SYSTICK_HZ 10
 #define STACK_SIZE 64
 
@@ -83,6 +84,21 @@ void gpio_setup(void)
     GPIOA->PUPDR  &= ~(3U << (5 * 2));
 }
 
+
+#ifdef UNIT_TESTS
+
+#include "unit_tests.h"
+int main(void)
+{
+	gpio_setup();
+	ready_lists_tests();
+	while (1)
+	{
+
+	}
+}
+
+#else
 int main(void)
 {
 //	process task_1;
@@ -107,10 +123,11 @@ int main(void)
 
 	gpio_setup();
 
-    init_systick(SYSTICK_HZ);
+    init_systick(SYSTICK_HZ); // enables the scheduler
 
     while (1)
     {
     	//GPIOA->ODR ^= (1U << 5);
     }
 }
+#endif
