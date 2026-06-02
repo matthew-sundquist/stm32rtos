@@ -10,16 +10,16 @@
 #include "tcb.h"
 #include "stdint.h"
 
-typedef struct task_list
+typedef struct task_queue
 {
 	tcb_t *head;
 	tcb_t *tail;
 	uint8_t size;
-} task_list_t;
+} task_queue_t;
 
-uint8_t init_task_list(task_list_t *rl); // init struct
-uint8_t push_task(task_list_t *rl, tcb_t *task);
-uint8_t pop_task(task_list_t *rl); // pops from task
+void init_task_queue(task_queue_t *tq); // init struct
+void push_task(task_queue_t *tq, tcb_t *task);
+tcb_t *pop_task(task_queue_t *tq); // pops from task
 
 
 #endif /* TASK_LIST_H_ */
