@@ -142,7 +142,7 @@ void scheduler_tick()
 {
 	task_add_ready(sch_inst.cur_task); // put the current running task back to ready
 
-	tcb_t *task = select_task(); // put the highest priority ready task into cur_task
+	tcb_t *task = task_pop_ready(); // put the highest priority ready task into cur_task
 
 	sch_inst.cur_task = task;
 

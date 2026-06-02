@@ -1,6 +1,7 @@
-
+#ifdef UNIT_TESTS
 #include <stdlib.h>
 #include <stm32l4xx.h>
+#include <stdbool.h>
 #include "unit_tests.h"
 #include "../src/tcb.h"
 #include "../src/scheduler.h"
@@ -16,12 +17,12 @@ void scheduler_tests()
 	t2.priority = 1;
 	t3.priority = 1;
 
-	if (init_scheduler(0) != true || init_scheduler(-1) != 1) // -1 overflow to highest allowed priority
+	if (init_scheduler(0) != true || init_scheduler(-1) != false) // -1 overflow to highest allowed priority
 	{
 		__BKPT(0);
 	}
 
-	if (init_scheduler(5) != 0)
+	if (init_scheduler(5) != true)
 	{
 		__BKPT(0);
 	}
@@ -31,15 +32,10 @@ void scheduler_tests()
 		__BKPT(0);
 	}
 
-	if (task_add_ready(NULL) != 1)
-	{
-		__BKPT(0);
-	}
+	task_add_ready(NULL); // not valid anymore
 
-	if (task_add_ready(&t1) != 0)
-	{
-		__BKPT(0);
-	}
+	task_add_ready(&t1);
+
 
 	if (select_task() != 0)
 	{
@@ -117,3 +113,4 @@ void scheduler_tests()
 	}
 
 }
+#endif

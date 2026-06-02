@@ -10,6 +10,7 @@
 
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "task_queue.h"
 #include "tcb.h"
 
@@ -44,7 +45,7 @@ typedef struct scheduler {
 
 
 void task_add_ready(tcb_t *task);
-tcb_t *task_pop_ready(uint8_t priority);
+tcb_t *task_pop_ready();
 
 void task_block(tcb_t *task);
 void task_unblock(tcb_t *task);

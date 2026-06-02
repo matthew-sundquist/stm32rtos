@@ -97,7 +97,6 @@ int main(void)
 		__BKPT(0); // passed
 	}
 }
-`
 #else
 int main(void)
 {
@@ -118,8 +117,8 @@ int main(void)
 	task_1.priority = 1;
 	task_2.priority = 1;
 
-	add_task_to_ready(&task_1);
-	add_task_to_ready(&task_2);
+	task_add_ready(&task_1);
+	task_add_ready(&task_2);
 
 	gpio_setup();
 

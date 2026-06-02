@@ -1,4 +1,4 @@
-
+#ifdef UNIT_TESTS
 #include <stdlib.h>
 #include <stm32l4xx.h>
 #include "unit_tests.h"
@@ -6,6 +6,7 @@
 #include "../src/task_queue.h"
 
 
+// need to create an override on the ASSERT macro to make it better for testing
 void ready_lists_tests()
 {
 	task_list_t rl;
@@ -53,3 +54,4 @@ void ready_lists_tests()
 		__BKPT(0);
 	}
 }
+#endif
