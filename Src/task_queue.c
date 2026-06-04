@@ -43,9 +43,10 @@ tcb_t *task_pop(task_queue_t *tq)
 {
 	ASSERT(tq != NULL);
 
-	ASSERT(tq->size > 0);
-
-	ASSERT(tq->head != NULL);
+	if (tq->size <= 0 && tq->head == NULL)
+	{
+		return NULL;
+	}
 
 	tcb_t *task = tq->head;
 
@@ -66,6 +67,7 @@ tcb_t *task_pop(task_queue_t *tq)
 
 	return task;
 }
+
 
 void task_remove(task_queue_t *tq, tcb_t *task)
 {

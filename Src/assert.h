@@ -1,6 +1,17 @@
 
 #include <stm32l4xx.h>
-#ifdef DEBUG
+
+#ifdef UNIT_TESTS
+extern uint32_t num_errors;
+#define ASSERT(x)			\
+	do						\
+	{						\
+		if (!(x))			\
+		{					\
+			num_errors++;	\
+		}					\
+	} while (0)
+#elif DEBUG
 #define ASSERT(x)			\
 	do 						\
 	{						\

@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include "scheduler.h"
 #include "task_stack.h"
+#include "config.h"
+
+#ifdef UNIT_TESTS
+#include "unit_tests.h"
+uint32_t num_errors = 0;
+#endif
 
 //#define UNIT_TESTS
 #define SYSTICK_HZ 10
@@ -86,11 +92,9 @@ void gpio_setup(void)
 
 
 #ifdef UNIT_TESTS
-
-#include "unit_tests.h"
 int main(void)
 {
-	ready_lists_tests();
+	task_queue_tests();
 	scheduler_tests();
 	while (1)
 	{

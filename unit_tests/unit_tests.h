@@ -2,7 +2,16 @@
 #ifndef UNIT_TEST_FUNCTIONS
 #define UNIT_TEST_FUNCTIONS
 
-void ready_lists_tests();
+typedef void (*test_fn_t)(void);
+
+typedef struct
+{
+	const char *name;
+	test_fn_t fn;
+
+} test_case_t;
+
+void task_queue_tests();
 void scheduler_tests();
 
 #endif
