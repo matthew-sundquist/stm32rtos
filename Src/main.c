@@ -59,7 +59,6 @@ void SysTick_Handler()
 
 void turn_on_LED(void)
 {
-	scheduler_t *t = get_scheduler();
 	while (1)
 	{
 		GPIOA->ODR = (1U << 5);
@@ -68,7 +67,6 @@ void turn_on_LED(void)
 
 void turn_off_LED(void)
 {
-	scheduler_t *t = get_scheduler();
 	while (1)
 	{
 		GPIOA->ODR = (0U << 5);
