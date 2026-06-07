@@ -57,9 +57,11 @@ void mutex_release(mutex_t *mut)
 
 	if (mut->delayed_tasks.size > 0)
 	{
+		__disable_irq();
 		tcb_t *task = task_pop(&(mut->delayed_tasks));
 
 		task_add_ready(task);
+		__enable_irq();
 	}
 
 	mut->owner_pid = 0;
