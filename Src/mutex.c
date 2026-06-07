@@ -48,21 +48,21 @@ void mutex_aquire(mutex_t *mut)
 
 void mutex_release(mutex_t *mut)
 {
-	if (get_running_pid() != __LDREXW(&(mut->owner_pid))) // maybe no need to use __LDREXW here, look into this later
+	if (get_running_pid() != mut->owner_pid)
 	{
 		return; // nothing to be done, we do not have the mutex
 	}
 
 	// steps: if task in delayed list,pop a task from the delayed list and add back to ready list
 
+	__disable_irq();
 	if (mut->delayed_tasks.size > 0)
 	{
-		__disable_irq();
 		tcb_t *task = task_pop(&(mut->delayed_tasks));
 
 		task_add_ready(task);
-		__enable_irq();
 	}
 
 	mut->owner_pid = 0;
+	__enable_irq();
 }
