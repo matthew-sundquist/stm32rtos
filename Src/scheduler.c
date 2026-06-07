@@ -148,10 +148,6 @@ void scheduler_handle_blocked()
 
 
 #ifdef DEBUG
-tcb_t* get_cur_task()
-{
-	return sch_inst.cur_task;
-}
 
 scheduler_t *get_scheduler()
 {
@@ -163,6 +159,21 @@ uint32_t *get_ticks()
 	return &sch_ticks;
 }
 #endif
+
+uint32_t get_running_pid()
+{
+	if (sch_inst.cur_task == NULL)
+	{
+		return 0;
+	}
+
+	return sch_inst.cur_task->pid;
+}
+
+tcb_t* get_cur_task()
+{
+	return sch_inst.cur_task;
+}
 
 void scheduler_tick()
 {

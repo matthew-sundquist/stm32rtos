@@ -39,8 +39,10 @@ void task_sleep(uint32_t ticks_asleep);
 
 void scheduler_handle_blocked();
 
-#ifdef DEBUG
+uint32_t get_running_pid();
+
 tcb_t* get_cur_task();
+#ifdef DEBUG
 
 scheduler_t *get_scheduler();
 
