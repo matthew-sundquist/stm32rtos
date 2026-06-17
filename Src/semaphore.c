@@ -33,9 +33,10 @@ void sem_aquire(semaphore_t *sem)
 			{
 				__CLREX();
 
+				__disable_irq();
+
 				tcb_t *cur_task = get_cur_task(); // we are the current task
 
-				__disable_irq();
 
 				task_block(cur_task, BLOCKED);
 
