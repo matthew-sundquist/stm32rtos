@@ -4,6 +4,8 @@
 #include "usart.h"
 #include "assert.h"
 
+static inline uint32_t get_uart_clk();
+
 
 void usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *config)
 {
@@ -24,8 +26,24 @@ void usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *confi
 	regs->CR2 &= ~((0x3 << 12));
 	regs->CR2 |= (config->stop_bits << 12);
 
+	uint32_t usartdiv = compute_USARTDIV(config->baudrate, regs);
 
-	regs->BRR |=
+	regs->BRR = (usartdiv & 0x0000FFF0);
+
+	if (regs->CR1 & (1 << 15))
+	{
+		// oversampling by 8
+		regs->BRR |= (usartdiv & 0xF) >> 1;
+	}
+	else
+	{
+		regs->BRR |= usartdiv & 0xF;
+	}
+
+	// enable transmitter and reciever
+	regs->CR1 |= (1 << 3) | (1 << 2);
+
+	regs->CR1 |= (1 << 0); // USART enable
 }
 
 static inline uint32_t compute_USARTDIV(const uint32_t baudrate, USART_TypeDef *regs)
@@ -36,20 +54,17 @@ static inline uint32_t compute_USARTDIV(const uint32_t baudrate, USART_TypeDef *
 	 * if oversampling by 8: 2*f_ck/USARTDIV
 	 */
 
-	uint32_t br;
 	if (regs->CR1 & (1 << 15))
 	{
 		// oversampling by 8
-
-
-		return br;
+		return 2 * get_uart_clk() / baudrate;
 	}
 
-	return br;
+	return get_uart_clk() / baudrate;
 
 }
 
-static uint32_t get_uart_clk()
+static inline uint32_t get_uart_clk()
 {
 	return 16000000; // assumption for now, need to change later
 }
