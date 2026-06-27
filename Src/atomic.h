@@ -8,6 +8,8 @@
 #ifndef ATOMIC_H_
 #define ATOMIC_H_
 
+// this relies on the assumption that this kernel is only run on a single core
+
 #define atomic_load_8(x) (*(volatile uint8_t *)(x))
 #define atomic_load_16(x) (*(volatile uint16_t *)(x))
 #define atomic_load_32(x) (*(volatile uint32_t *)(x))

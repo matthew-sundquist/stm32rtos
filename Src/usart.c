@@ -70,7 +70,29 @@ static inline uint32_t get_uart_clk()
 }
 
 // non-blocking
-void usart_write_async(usart_t *usart, const void *buf, size_t len);
+bool usart_write_async(usart_t *usart, const void *buf, size_t len)
+{
+	if (!usart || !buf || len <= 0)
+	{
+		return false;
+	}
+
+	/*
+	 * logical flow: put data into transmit fifo
+	 *				 enable transmit complete interrupt
+	 *				 everytime interrupt goes off, load more data into transmit fifo
+	 *				 when no more data left to load into fifo, auto disable transmit fifo from inside interrupt
+	 */
+	usart->tx.buf = (uint8_t *)buf;
+
+	usart->regs->CR1 |= (1 << 7); // transmit interrupts enable
+	usart->regs->CR1 |= (1 << 6); // transmit complete interrupt enable
+
+	// THERE ARE OTHER INTERRUPTS TO BE ENABLED, NEED TO LOOK INTO THIS MORE LATER
+}
 
 // non-blocking
-void usart_read_async(usart_t *usart, void *buf, size_t len);
+bool usart_read_async(usart_t *usart, void *buf, size_t len)
+{
+
+}
