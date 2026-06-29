@@ -34,8 +34,8 @@ typedef enum {
 } usart_parity_bit_t;
 
 typedef enum {
-	UART_BUSY,
-	UART_IDLE
+	USART_BUSY,
+	USART_IDLE
 } usart_state_t;
 
 

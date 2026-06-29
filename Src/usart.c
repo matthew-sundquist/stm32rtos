@@ -6,6 +6,15 @@
 
 static inline uint32_t get_uart_clk();
 static void usart_handle_txe(usart_t *usart);
+static void usart_handle_tc(usart_t *usart);
+static inline uint32_t compute_USARTDIV(const uint32_t baudrate, USART_TypeDef *regs);
+static void usart_irq(usart_t *usart);
+static void usart_handle_rxne(usart_t *usart);
+
+static usart_t *usart1;
+static usart_t *usart2;
+static usart_t *usart3;
+static usart_t *usart4;
 
 bool usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *config)
 {
@@ -86,6 +95,7 @@ bool usart_write_async(usart_t *usart, const void *buf, size_t len)
 
 	usart->tx.buf = (uint8_t *)buf;
 	usart->tx.count = len;
+	usart->tx.state = USART_BUSY;
 
 	usart->regs->CR1 |= USART_CR1_TXEIE; // transmit interrupts enable
 
@@ -99,12 +109,17 @@ bool usart_write_async(usart_t *usart, const void *buf, size_t len)
 // non-blocking
 bool usart_read_async(usart_t *usart, void *buf, size_t len)
 {
+	usart->rx.size = len;
+	usart->rx.state = USART_BUSY;
 
+	usart->rx.buf = &(buf[len-1]);
+
+	usart->regs->CR1 |= USART_CR1_RXNEIE;
 }
 
 void USART1_IRQHandler()
 {
-
+	usart_irq(usart1);
 }
 
 static void usart_irq(usart_t *usart)
@@ -117,6 +132,16 @@ static void usart_irq(usart_t *usart)
 	if (status & USART_ISR_TXE)
 	{
 		usart_handle_txe(usart);
+	}
+
+	if (status & USART_ISR_TC)
+	{
+		usart_handle_tc(usart);
+	}
+
+	if (status & USART_ISR_RXNE)
+	{
+		usart_handle_rxne(usart);
 	}
 }
 
@@ -133,4 +158,25 @@ static void usart_handle_txe(usart_t *usart)
 		usart->regs->CR1 |= USART_CR1_TCIE; // enable transmit interrupt
 	}
 }
+
+static void usart_handle_tc(usart_t *usart)
+{
+	usart->regs->CR1 &= ~USART_CR1_TCIE;
+	usart->tx.state = USART_IDLE;
+}
+
+static void usart_handle_rxne(usart_t *usart)
+{
+		usart->buf = usart->regs->RDR;
+		usart->buf--;
+		usart->count--;
+
+		if (usart->rx->count <= 0)
+		{
+			usart->regs->CR1 &= ~USART_CR1_RXNEIE;
+			usart->rx.state = USART_IDLE;
+		}
+}
+
+
 
