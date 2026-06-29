@@ -43,6 +43,7 @@ typedef struct
 {
 	uint8_t *buf;
 	size_t count;
+	uint8_t write_idx;
 
 	usart_state_t state;
 

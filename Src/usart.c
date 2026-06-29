@@ -53,6 +53,8 @@ bool usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *confi
 	regs->CR1 |= (1 << 3) | (1 << 2);
 
 	regs->CR1 |= (1 << 0); // USART enable
+
+	return true;
 }
 
 static inline uint32_t compute_USARTDIV(const uint32_t baudrate, USART_TypeDef *regs)
@@ -104,17 +106,26 @@ bool usart_write_async(usart_t *usart, const void *buf, size_t len)
 	// can only write the TDR reg when TXE=1 (transmit data register empty)
 
 	// THERE ARE OTHER INTERRUPTS TO BE ENABLED, NEED TO LOOK INTO THIS MORE LATER
+
+	return true;
 }
 
 // non-blocking
 bool usart_read_async(usart_t *usart, void *buf, size_t len)
 {
-	usart->rx.size = len;
+	if (!usart || !buf || len <= 0)
+	{
+		return false;
+	}
+	usart->rx.count = len;
 	usart->rx.state = USART_BUSY;
+	usart->rx.write_idx = 0;
 
-	usart->rx.buf = &(buf[len-1]);
+	usart->rx.buf = (uint8_t*)buf;
 
 	usart->regs->CR1 |= USART_CR1_RXNEIE;
+
+	return true;
 }
 
 void USART1_IRQHandler()
@@ -167,15 +178,15 @@ static void usart_handle_tc(usart_t *usart)
 
 static void usart_handle_rxne(usart_t *usart)
 {
-		usart->buf = usart->regs->RDR;
-		usart->buf--;
-		usart->count--;
+	*(usart->rx.buf) = (uint8_t) (usart->regs->RDR & 0x000F);
+	usart->rx.buf++;
+	usart->rx.write_idx++;
 
-		if (usart->rx->count <= 0)
-		{
-			usart->regs->CR1 &= ~USART_CR1_RXNEIE;
-			usart->rx.state = USART_IDLE;
-		}
+	if (usart->rx.write_idx >= usart->rx.count)
+	{
+		usart->regs->CR1 &= ~USART_CR1_RXNEIE;
+		usart->rx.state = USART_IDLE;
+	}
 }
 
 
