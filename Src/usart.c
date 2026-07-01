@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "usart.h"
 #include "assert.h"
+#include "semaphore.h"
 
 static inline uint32_t get_uart_clk();
 static void usart_handle_txe(usart_t *usart);
@@ -19,13 +20,15 @@ static usart_t *usart2;
 static usart_t *usart3;
 static usart_t *usart4;
 
-
 bool usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *config)
 {
 	if (!usart || !regs || !config)
 	{
 		return false;
 	}
+
+	sem_init(&usart->rx.sem, 1, 0);
+	sem_init(&usart->tx.sem, 1, 0);
 
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN; // need to change to not be hardcoded
 
@@ -141,6 +144,29 @@ bool usart_read_async(usart_t *usart, void *buf, size_t len)
 	return ring_buffer_pop(&usart->rx.rb, (uint8_t *) buf, len);
 }
 
+bool usart_read_sync(usart_t *usart, void *buf, size_t len, uint64_t timeout_ticks)
+{
+	if (!usart || !buf || len <= 0)
+	{
+		return false;
+	}
+
+	uint32_t exit_tick = get_ticks() + timeout_ticks;
+
+	do {
+		if (get_ticks > exit_tick)
+		{
+			return false;
+		}
+
+		sem_aquire(&usart->rx.sem);
+
+	} while (ring_buffer_get_count(&usart->rx.rb) < len);
+
+	return ring_buffer_pop(&usart->rx.rb, (uint8_t *) buf, len);
+}
+
+
 bool usart_enable_rx_int(usart_t *usart)
 {
 	return set_rx_int(usart, true);
@@ -216,6 +242,7 @@ static void usart_handle_rxne(usart_t *usart)
 	if (!ring_buffer_push_byte(&usart->rx.rb, (uint8_t) (usart->regs->RDR & 0xFF)))
 	{
 		usart->rx.num_errors++;
+		sem_release(&usart->rx.sem); // may need to be refactored, being called inside ISR
 		return;
 	}
 }

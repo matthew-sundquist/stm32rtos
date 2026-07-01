@@ -154,9 +154,9 @@ scheduler_t *get_scheduler()
 	return &sch_inst;
 }
 
-uint32_t *get_ticks()
+uint32_t get_ticks()
 {
-	return &sch_ticks;
+	return sch_ticks;
 }
 #endif
 

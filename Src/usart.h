@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "ring_buffer.h"
+#include "semaphore.h"
 
 // DO NOT RESET TE BIT WHILE TRANSMITTING
 
@@ -47,6 +48,8 @@ typedef struct
 	uint32_t num_errors;
 
 	usart_state_t state;
+
+	semaphore_t sem;
 
 } usart_channel_t;
 
@@ -87,6 +90,8 @@ bool usart_write_async(usart_t *usart, const void *buf, size_t len);
 
 // non-blocking
 bool usart_read_async(usart_t *usart, void *buf, size_t len);
+
+bool usart_read_sync(usart_t *usart, void *buf, size_t len, uint64_t timeout_ticks);
 
 bool usart_enable_rx_int(usart_t *usart);
 
