@@ -158,13 +158,25 @@ int main(void)
 
 //    init_systick(SYSTICK_HZ); // enables the scheduler
 
+	uint8_t rx_buf[100];
+	uint8_t tx_buf[100];
+
 	USART_TypeDef *usart1_regs = USART1;
 	usart_t usart1_inst;
 	usart_config_t usart1_config = {
 			.baudrate = 9600,
 			.word_len = USART_WORD_LEN_8,
 			.stop_bits = UART_STOP_BITS_1,
-			.parity_bit = UART_PARITY_NONE
+			.parity_bit = UART_PARITY_NONE,
+
+			.tx_buf = {
+					.buf = tx_buf,
+					.size = sizeof(tx_buf)
+			},
+			.rx_buf = {
+					.buf = rx_buf,
+					.size = sizeof(rx_buf)
+			}
 	};
 
 	RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
@@ -182,11 +194,11 @@ int main(void)
 
 	usart_init(&usart1_inst, usart1_regs, &usart1_config);
 
-	char buf[5] = {'s', 'i', 'g', 'm', 'a'};
-	char recv_buf[5] = {0, 0, 0, 0, 0};
 	int entry = 1;
 	while (1)
 	{
+		uint8_t recv_buf[5];
+		uint8_t buf[5] = {1, 2, 3, 4, 5};
 		if (entry == 1)
 		{
 			usart_read_async(&usart1_inst, recv_buf, sizeof(recv_buf));

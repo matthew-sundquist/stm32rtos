@@ -12,11 +12,13 @@ static void usart_irq(usart_t *usart);
 static void usart_handle_rxne(usart_t *usart);
 static void usart_handle_ore(usart_t *usart);
 static void usart_handle_idle(usart_t *usart);
+static inline bool set_rx_int(usart_t *usart, bool enabled);
 
 static usart_t *usart1;
 static usart_t *usart2;
 static usart_t *usart3;
 static usart_t *usart4;
+
 
 bool usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *config)
 {
@@ -63,6 +65,9 @@ bool usart_init(usart_t *usart, USART_TypeDef *regs, const usart_config_t *confi
 
 	usart1 = usart;
 
+	ring_buffer_init(&usart->rx.rb, usart->config->rx_buf.buf, usart->config->rx_buf.size);
+	ring_buffer_init(&usart->tx.rb, usart->config->tx_buf.buf, usart->config->tx_buf.size);
+
 	usart->rx.num_errors = 0;
 	usart->tx.num_errors = 0;
 
@@ -107,18 +112,15 @@ bool usart_write_async(usart_t *usart, const void *buf, size_t len)
 	 *				 when no more data left to load into fifo, auto disable transmit fifo from inside interrupt
 	 */
 
-	usart->tx.buf = (uint8_t *)buf;
-	usart->tx.count = len;
+	if (!ring_buffer_push(&usart->tx.rb, (uint8_t *)buf, len))
+	{
+		return false;
+	}
+
 	usart->tx.state = USART_BUSY;
 
 	usart->regs->CR1 |= USART_CR1_TXEIE; // transmit interrupts enable
 	usart->regs->CR1 &= ~USART_CR1_TCIE; // disable transmit complete interrupt
-
-	// put data into TDR reg, and then when TC=1, load more data into the TDR reg
-
-	// can only write the TDR reg when TXE=1 (transmit data register empty)
-
-	// THERE ARE OTHER INTERRUPTS TO BE ENABLED, NEED TO LOOK INTO THIS MORE LATER
 
 	return true;
 }
@@ -130,15 +132,28 @@ bool usart_read_async(usart_t *usart, void *buf, size_t len)
 	{
 		return false;
 	}
-	usart->rx.count = len;
-	usart->rx.state = USART_BUSY;
-	usart->rx.write_idx = 0;
 
-	usart->rx.buf = (uint8_t*)buf;
+	if (ring_buffer_get_count(&usart->rx.rb) < len)
+	{
+		return false;
+	}
 
-	usart->regs->CR1 |= USART_CR1_RXNEIE;
+	if (ring_buffer_pop(&usart->rx.rb, (uint8_t *) buf, len))
+	{
+		return false;
+	}
 
 	return true;
+}
+
+bool usart_enable_rx_int(usart_t *usart)
+{
+	return set_rx_int(usart, true);
+}
+
+bool usart_disable_rx_int(usart_t *usart)
+{
+	return set_rx_int(usart, false);
 }
 
 void USART1_IRQHandler()
@@ -181,9 +196,13 @@ static void usart_irq(usart_t *usart)
 
 static void usart_handle_txe(usart_t *usart)
 {
-	usart->regs->TDR = usart->tx.buf[usart->tx.write_idx++];
+	if (!ring_buffer_pop_byte(&usart->tx.rb, (uint8_t *)&usart->regs->TDR))
+	{
+		usart->tx.num_errors++;
+		return;
+	}
 
-	if (usart->tx.write_idx >= usart->tx.count)
+	if (ring_buffer_empty(&usart->tx.rb))
 	{
 		usart->regs->CR1 &= ~USART_CR1_TXEIE; // disable transmit interrupts
 		usart->regs->CR1 |= USART_CR1_TCIE; // enable transmit complete interrupt
@@ -199,13 +218,10 @@ static void usart_handle_tc(usart_t *usart)
 
 static void usart_handle_rxne(usart_t *usart)
 {
-	usart->rx.buf[usart->rx.write_idx] = (uint8_t) (usart->regs->RDR & 0xFF);
-	usart->rx.write_idx++;
-
-	if (usart->rx.write_idx >= usart->rx.count)
+	if (!ring_buffer_push_byte(&usart->rx.rb, (uint8_t) (usart->regs->RDR & 0xFF)))
 	{
-		usart->regs->CR1 &= ~USART_CR1_RXNEIE;
-		usart->rx.state = USART_IDLE;
+		usart->rx.num_errors++;
+		return;
 	}
 }
 
@@ -226,6 +242,28 @@ static void usart_handle_idle(usart_t *usart)
 	(void)usart->regs->RDR;
 	usart->regs->ICR = USART_ICR_IDLECF;
 }
+
+static inline bool set_rx_int(usart_t *usart, bool enabled)
+{
+	if (!usart)
+	{
+		return false;
+	}
+
+	if (enabled)
+	{
+		usart->regs->CR1 |= USART_CR1_RXNEIE;
+	}
+	else
+	{
+		usart->regs->CR1 &= ~USART_CR1_RXNEIE;
+	}
+
+	return true;
+
+	//usart->regs->CR1 = (usart->regs->CR1 & ~USART_CR1_RXNEIE) | (enabled * USART_CR1_RXNEIE);
+}
+
 
 
 

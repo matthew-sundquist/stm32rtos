@@ -25,7 +25,7 @@ bool ring_buffer_init(ring_buffer_t* rb, uint8_t *buf, size_t size)
 	return true;
 }
 
-bool ring_buffer_write_byte(ring_buffer_t* rb, const uint8_t data)
+bool ring_buffer_push_byte(ring_buffer_t* rb, const uint8_t data)
 {
 	const static uint8_t size = 1;
 	if (!rb)
@@ -34,7 +34,7 @@ bool ring_buffer_write_byte(ring_buffer_t* rb, const uint8_t data)
 	}
 
 
-	if (is_full(rb->head + size, rb->tail))
+	if (is_full(rb->head, rb->tail))
 	{
 		// full case
 		return false;
@@ -45,7 +45,7 @@ bool ring_buffer_write_byte(ring_buffer_t* rb, const uint8_t data)
 	return true;
 }
 
-bool ring_buffer_write(ring_buffer_t *rb, const uint8_t *data, size_t size)
+bool ring_buffer_push(ring_buffer_t *rb, const uint8_t *data, size_t size)
 {
 	if (!rb || !data || size <= 0)
 	{
@@ -99,7 +99,7 @@ bool ring_buffer_pop(ring_buffer_t* rb, uint8_t *data, size_t size)
 		return false;
 	}
 
-	if (size > get_total_elements(rb->head, rb->tail))
+	if (size > get_total_elements(rb->head, rb->tail, rb->size))
 	{
 		return false;
 	}
@@ -119,6 +119,20 @@ bool ring_buffer_pop(ring_buffer_t* rb, uint8_t *data, size_t size)
 	return true;
 }
 
+uint32_t ring_buffer_get_count(ring_buffer_t* rb)
+{
+	if (!rb)
+	{
+		return 0;
+	}
+	return get_total_elements(rb->head, rb->tail, rb->size);
+}
+
+bool ring_buffer_empty(ring_buffer_t* rb)
+{
+	return is_empty(rb->head, rb->tail);
+}
+
 static inline size_t get_free_space(const uint32_t head, const uint32_t tail, const size_t size)
 {
 	return size - get_total_elements(head, tail, size);
@@ -136,5 +150,5 @@ static inline bool is_empty(const uint32_t head, const uint32_t tail)
 
 static inline bool is_full(const uint32_t head, const uint32_t tail)
 {
-	return (head+1) >= tail;
+	return (head+1) == tail;
 }
